@@ -1,11 +1,11 @@
-# Game Khủng Long Chrome — STM32F401RE + Kit Mở Rộng LUMI
+# Game Khủng Long Chrome
 
-Tái tạo trò chơi khủng long khi mất mạng của Google Chrome, chạy trên vi điều khiển STM32 NUCLEO-F401RE kết hợp với Kit mở rộng IoT của LUMI, hiển thị trên màn hình LCD SPI ST7735 128x128.
+Tái tạo trò chơi khủng long khi mất mạng của Google Chrome, chạy trên vi điều khiển STM32 NUCLEO-F401RE kết hợp với Kit mở rộng LUMI.
 
 ## Tính Năng
 
 - Màn hình menu với con trỏ điều hướng
-- Hai mức tốc độ (Chậm / Nhanh) — chỉ ảnh hưởng tốc độ xương rồng
+- Hai mức tốc độ (Chậm / Nhanh)
 - Theo dõi điểm cao nhất giữa các lượt chơi
 - Âm thanh buzzer khi nhảy
 - Đèn LED đỏ nhấp nháy khi thua
@@ -199,8 +199,6 @@ Người chơi có thể chọn độ khó trên màn hình menu khi mở game. 
 - **Tốc độ xương rồng:** Chậm = 6 pixel/frame, Nhanh = 9 pixel/frame
 - **Nhảy:** 14 frame (7 frame bay lên + 7 frame rơi xuống), độ cao 35 pixel
 - **Va chạm:** Sử dụng thuật toán AABB (Axis-Aligned Bounding Box)
-- **Hiển thị:** Chỉ cập nhật pixel thay đổi mỗi frame để giảm lượng dữ liệu SPI và tránh nhấp nháy
-- **Số:** Hiển thị bằng `ucg_DrawGlyph` từng ký tự vì thư viện C nano specs không hỗ trợ `snprintf`/`printf` với `%d`/`%u`
 - **3 loại xương rồng:** Xoay vòng ngẫu nhiên mỗi lần xuất hiện lại
 
 ### Sơ đồ trạng thái
