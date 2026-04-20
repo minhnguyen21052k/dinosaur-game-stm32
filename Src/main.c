@@ -189,9 +189,7 @@ static void MenuFull(void) {
     ucg_DrawString(&ucg, 15, 14, 0, "DINO GAME");
 
     ucg_SetColor(&ucg, 0, 255, 255, 255);
-    ucg_DrawString(&ucg, 20, 30, 0, "Best: ");
-    ucg_SetColor(&ucg, 0, 255, 255, 255);
-    DrawNumber(62, 30, hiScore);
+    ucg_DrawString(&ucg, 20, 30, 0, "Best:");
 
     ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 18, MENU_Y0, 0, "Start Game");
@@ -205,6 +203,10 @@ static void MenuFull(void) {
     prevMenuSel = menuSel;
     ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 5, menuSel==0 ? MENU_Y0 : MENU_Y1, 0, ">");
+
+    PrepText();
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
+    DrawNumber(58, 30, hiScore);
 }
 
 static void GameStart(void) {
@@ -243,15 +245,20 @@ static void GameOver(void) {
 
     PrepText();
 
-    ucg_SetColor(&ucg, 0, 255, 40, 40);
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 14, 34, 0, "GAME OVER!");
 
     ucg_SetColor(&ucg, 0, 255, 255, 255);
-    ucg_DrawString(&ucg, 18, 52, 0, "Score: ");
+    ucg_DrawString(&ucg, 18, 52, 0, "Score:");
+
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
+    ucg_DrawString(&ucg, 25, 68, 0, "Best:");
+
+    PrepText();
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     DrawNumber(68, 52, score);
 
-    ucg_SetColor(&ucg, 0, 255, 220, 0);
-    ucg_DrawString(&ucg, 25, 68, 0, "Best: ");
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     DrawNumber(67, 68, hiScore);
 }
 
@@ -298,22 +305,28 @@ int main(void) {
         }
 
         if (state==ST_MENU) {
-                    if (b1 && menuSel > 0) {
+        	static uint32_t menuLock = 0;
+        	uint32_t now = GetMilSecTick();
+
+        	if (now - menuLock < 300) continue;
+
+        	if (b1 && menuSel > 0) {
+                        menuLock = now;
                         prevMenuSel=menuSel;
                         menuSel--;
                         MenuDrawCursor();
-                    }
-                    if (b5 && menuSel < MENU_ITEMS-1) {
+        	} else if (b5 && menuSel < MENU_ITEMS-1) {
+                        menuLock = now;
                         prevMenuSel=menuSel;
                         menuSel++;
                         MenuDrawCursor();
-                    }
-                    if (b3) {
+        	} else if (b3) {
+                        menuLock = now;
                         if (menuSel==0) GameStart();
                         else { speedFast^=1; MenuDrawSpeed(); }
-                    }
-                    continue;
-                }
+        	}
+        	continue;
+        }
         if (state==ST_OVER) {
             if (GetMilSecTick()-overTime>=2000) {
                 LedControl_SetColorIndividual(LED_KIT_ID0, LED_COLOR_RED, 0);
