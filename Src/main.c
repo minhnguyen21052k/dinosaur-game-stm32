@@ -1,12 +1,3 @@
-/**
- * ============================================================
- *  CHROME DINO GAME — LUMI Extension Kit (V10)
- *  - No ucg_ClearScreen transitions (overlay instead)
- *  - Speed setting only changes cactus move speed
- *  - Frame rate and dino speed constant regardless of setting
- * ============================================================
- */
-
 #include "stm32f401re_rcc.h"
 #include "stm32f401re_gpio.h"
 #include "timer.h"
@@ -19,18 +10,18 @@
 #define SW          128
 #define SH          128
 #define GROUND_Y    100
-#define DINO_W       12
-#define DINO_H       14
+#define DINO_W       14
+#define DINO_H       16
 #define DINO_X       15
 #define DINO_GY     (GROUND_Y - DINO_H)
-#define CACT_W        8
-#define CACT_H       12
+#define CACT_W       10
+#define CACT_H       14
 #define CACT_GY     (GROUND_Y - CACT_H)
 #define JUMP_H       35
 #define JUMP_FR      14
-#define FRAME_MS     60      /* constant frame rate for all speeds */
-#define CACT_SPD_SLOW 3      /* pixels per frame: slow */
-#define CACT_SPD_FAST 6      /* pixels per frame: fast */
+#define FRAME_MS     60
+#define CACT_SPD_SLOW 6
+#define CACT_SPD_FAST 9
 #define MENU_ITEMS    2
 
 #define MENU_Y0     52
@@ -50,13 +41,13 @@ static int16_t  dinoY, prevDinoY;
 static uint8_t  jumping = 0, jumpFr = 0;
 static int16_t  cactX, prevCactX;
 static uint8_t  cactSpeed = CACT_SPD_SLOW;
+static uint8_t  cactType = 0;
 static uint32_t lastFrMs;
 static uint32_t overTime;
 static uint8_t  pB1=1, pB3=1, pB5=1;
 static uint8_t  buzzOn=0;
 static uint32_t buzzOffT=0;
 
-/* ── Draw a number using ucg_DrawGlyph ── */
 static void DrawNumber(int16_t x, int16_t y, uint16_t val) {
     char c;
     uint8_t started = 0;
@@ -87,7 +78,6 @@ static void PrepText(void) {
     ucg_SetFontMode(&ucg, UCG_FONT_MODE_TRANSPARENT);
 }
 
-/* ── Dino ── */
 static void DrawDinoFrame(int16_t oldY, int16_t newY) {
     if (oldY != newY) {
         ucg_SetColor(&ucg,0,0,0,0);
@@ -99,17 +89,57 @@ static void DrawDinoFrame(int16_t oldY, int16_t newY) {
             if (h>0) ucg_DrawBox(&ucg, DINO_X, oldY, DINO_W, h);
         }
     }
-    ucg_SetColor(&ucg,0,30,200,30);
-    ucg_DrawBox(&ucg, DINO_X, newY+3, 10, 8);
-    ucg_DrawBox(&ucg, DINO_X+4, newY, 8, 4);
+
+    int16_t x = DINO_X;
+    int16_t y = newY;
+
+    ucg_SetColor(&ucg, 0, 83, 83, 83);
+    ucg_DrawBox(&ucg, x+6, y, 8, 6);
     ucg_SetColor(&ucg,0,0,0,0);
-    ucg_DrawPixel(&ucg, DINO_X+9, newY+1);
-    ucg_SetColor(&ucg,0,30,200,30);
-    ucg_DrawBox(&ucg, DINO_X+1, newY+11, 2, 3);
-    ucg_DrawBox(&ucg, DINO_X+6, newY+11, 2, 3);
+    ucg_DrawBox(&ucg, x+8, y+5, 3, 1);
+    ucg_SetColor(&ucg, 0, 83, 83, 83);
+    ucg_SetColor(&ucg,0,255,255,255);
+    ucg_DrawBox(&ucg, x+11, y+1, 2, 2);
+    ucg_SetColor(&ucg, 0, 83, 83, 83);
+    ucg_DrawBox(&ucg, x+5, y+6, 3, 2);
+    ucg_DrawBox(&ucg, x+2, y+7, 10, 4);
+    ucg_DrawBox(&ucg, x+10, y+8, 3, 1);
+    ucg_DrawBox(&ucg, x+12, y+9, 1, 2);
+    ucg_DrawBox(&ucg, x+1, y+7, 1, 4);
+    ucg_DrawBox(&ucg, x, y+7, 1, 3);
+    ucg_DrawBox(&ucg, x+3, y+11, 2, 3);
+    ucg_DrawBox(&ucg, x+2, y+14, 3, 1);
+    ucg_DrawBox(&ucg, x+8, y+11, 2, 3);
+    ucg_DrawBox(&ucg, x+7, y+14, 3, 1);
 }
 
-/* ── Cactus ── */
+static void DrawCact0(int16_t x) {
+    ucg_SetColor(&ucg, 0, 50, 140, 50);
+    ucg_DrawBox(&ucg, x+3, CACT_GY, 4, CACT_H);
+    ucg_DrawBox(&ucg, x, CACT_GY+4, 3, 2);
+    ucg_DrawBox(&ucg, x, CACT_GY+2, 2, 2);
+    ucg_DrawBox(&ucg, x+7, CACT_GY+7, 3, 2);
+    ucg_DrawBox(&ucg, x+8, CACT_GY+5, 2, 2);
+}
+
+static void DrawCact1(int16_t x) {
+    ucg_SetColor(&ucg, 0, 40, 130, 40);
+    ucg_DrawBox(&ucg, x+1, CACT_GY+4, 3, CACT_H-4);
+    ucg_DrawBox(&ucg, x, CACT_GY+6, 1, 3);
+    ucg_DrawBox(&ucg, x+6, CACT_GY, 3, CACT_H);
+    ucg_DrawBox(&ucg, x+9, CACT_GY+3, 1, 3);
+    ucg_DrawBox(&ucg, x+4, CACT_GY+8, 2, 2);
+}
+
+static void DrawCact2(int16_t x) {
+    ucg_SetColor(&ucg, 0, 60, 150, 60);
+    ucg_DrawBox(&ucg, x+1, CACT_GY+2, 2, CACT_H-2);
+    ucg_DrawBox(&ucg, x+4, CACT_GY, 2, CACT_H);
+    ucg_DrawBox(&ucg, x+7, CACT_GY+3, 2, CACT_H-3);
+    ucg_DrawBox(&ucg, x, CACT_GY+5, 4, 2);
+    ucg_DrawBox(&ucg, x+6, CACT_GY+6, 4, 2);
+}
+
 static void DrawCactFrame(int16_t oldX, int16_t newX) {
     if (oldX!=newX && oldX>=-CACT_W && oldX<=SW) {
         ucg_SetColor(&ucg,0,0,0,0);
@@ -119,10 +149,9 @@ static void DrawCactFrame(int16_t oldX, int16_t newX) {
             ucg_DrawBox(&ucg, eX, CACT_GY, eW, CACT_H);
     }
     if (newX>=-CACT_W && newX<=SW) {
-        ucg_SetColor(&ucg,0,0,130,0);
-        ucg_DrawBox(&ucg, newX+2, CACT_GY, 4, CACT_H);
-        ucg_DrawBox(&ucg, newX, CACT_GY+3, 2, 4);
-        ucg_DrawBox(&ucg, newX+6, CACT_GY+5, 2, 4);
+        if (cactType==0) DrawCact0(newX);
+        else if (cactType==1) DrawCact1(newX);
+        else DrawCact2(newX);
     }
 }
 
@@ -133,14 +162,12 @@ static void EraseCactFull(int16_t x) {
     }
 }
 
-/* ══════════════════════════════════════════
- *  MENU
- * ══════════════════════════════════════════ */
+
 static void MenuDrawCursor(void) {
     PrepText();
     ucg_SetColor(&ucg,0,0,0,0);
     ucg_DrawBox(&ucg, 3, (prevMenuSel==0 ? MENU_Y0 : MENU_Y1) - 12, 12, 15);
-    ucg_SetColor(&ucg, 0, 30, 200, 30);
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 5, menuSel==0 ? MENU_Y0 : MENU_Y1, 0, ">");
 }
 
@@ -152,53 +179,43 @@ static void MenuDrawSpeed(void) {
     ucg_DrawString(&ucg, 72, MENU_Y1, 0, speedFast ? "Fast" : "Slow");
 }
 
-static void MenuDrawBest(void) {
-    ucg_SetColor(&ucg,0,0,0,0);
-    ucg_DrawBox(&ucg, 60, 17, 60, 15);
-    PrepText();
-    ucg_SetColor(&ucg, 0, 90, 90, 90);
-    DrawNumber(62, 30, hiScore);
-}
-
 static void MenuFull(void) {
-    /* Fill screen black without ucg_ClearScreen for speed */
     ucg_SetColor(&ucg,0,0,0,0);
     ucg_DrawBox(&ucg, 0, 0, SW, SH);
 
     PrepText();
 
-    ucg_SetColor(&ucg, 0, 255, 220, 0);
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 15, 14, 0, "DINO GAME");
 
-    ucg_SetColor(&ucg, 0, 90, 90, 90);
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 20, 30, 0, "Best: ");
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     DrawNumber(62, 30, hiScore);
 
     ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 18, MENU_Y0, 0, "Start Game");
+
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 18, MENU_Y1, 0, "Speed:");
+
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 72, MENU_Y1, 0, speedFast ? "Fast" : "Slow");
 
     prevMenuSel = menuSel;
-    ucg_SetColor(&ucg, 0, 30, 200, 30);
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
     ucg_DrawString(&ucg, 5, menuSel==0 ? MENU_Y0 : MENU_Y1, 0, ">");
-
-    ucg_SetColor(&ucg, 0, 90, 90, 90);
-    ucg_DrawString(&ucg, 5, 110, 0, "B1/5:Sel B3:OK");
 }
 
-/* ══════════════════════════════════════════
- *  GAME START — no ClearScreen, draw over menu
- * ══════════════════════════════════════════ */
 static void GameStart(void) {
     state=ST_PLAY; score=0; prevScore=0xFFFF;
     dinoY=DINO_GY; prevDinoY=DINO_GY;
     jumping=0; jumpFr=0;
     cactX=SW+20; prevCactX=cactX;
     cactSpeed=speedFast?CACT_SPD_FAST:CACT_SPD_SLOW;
+    cactType=0;
     lastFrMs=GetMilSecTick();
 
-    /* Black fill instead of ClearScreen */
     ucg_SetColor(&ucg,0,0,0,0);
     ucg_DrawBox(&ucg, 0, 0, SW, SH);
 
@@ -212,9 +229,6 @@ static void GameStart(void) {
     DrawDinoFrame(DINO_GY, DINO_GY);
 }
 
-/* ══════════════════════════════════════════
- *  GAME OVER — overlay on top, no clear
- * ══════════════════════════════════════════ */
 static void GameOver(void) {
     state=ST_OVER;
     overTime=GetMilSecTick();
@@ -224,7 +238,6 @@ static void GameOver(void) {
     BuzzerControl_SetDutyCycle(30);
     buzzOn=0;
 
-    /* Dark red overlay */
     ucg_SetColor(&ucg, 0, 40, 0, 0);
     ucg_DrawBox(&ucg, 4, 18, 120, 68);
 
@@ -284,26 +297,23 @@ int main(void) {
             BuzzerControl_SetDutyCycle(0); buzzOn=0;
         }
 
-        /* ── MENU ── */
         if (state==ST_MENU) {
-            if (b1) {
-                prevMenuSel=menuSel;
-                menuSel=(menuSel==0)?MENU_ITEMS-1:menuSel-1;
-                MenuDrawCursor();
-            }
-            if (b5) {
-                prevMenuSel=menuSel;
-                menuSel=(menuSel+1)%MENU_ITEMS;
-                MenuDrawCursor();
-            }
-            if (b3) {
-                if (menuSel==0) GameStart();
-                else { speedFast^=1; MenuDrawSpeed(); }
-            }
-            continue;
-        }
-
-        /* ── GAME OVER ── */
+                    if (b1 && menuSel > 0) {
+                        prevMenuSel=menuSel;
+                        menuSel--;
+                        MenuDrawCursor();
+                    }
+                    if (b5 && menuSel < MENU_ITEMS-1) {
+                        prevMenuSel=menuSel;
+                        menuSel++;
+                        MenuDrawCursor();
+                    }
+                    if (b3) {
+                        if (menuSel==0) GameStart();
+                        else { speedFast^=1; MenuDrawSpeed(); }
+                    }
+                    continue;
+                }
         if (state==ST_OVER) {
             if (GetMilSecTick()-overTime>=2000) {
                 LedControl_SetColorIndividual(LED_KIT_ID0, LED_COLOR_RED, 0);
@@ -313,14 +323,13 @@ int main(void) {
             continue;
         }
 
-        /* ── PLAYING ── */
+
         if (b3 && !jumping) {
             jumping=1; jumpFr=0;
             BuzzerControl_SetDutyCycle(50);
             buzzOn=1; buzzOffT=GetMilSecTick();
         }
 
-        /* Constant frame rate */
         uint32_t now=GetMilSecTick();
         if (now-lastFrMs<FRAME_MS) continue;
         lastFrMs=now;
@@ -328,7 +337,6 @@ int main(void) {
         prevDinoY=dinoY;
         prevCactX=cactX;
 
-        /* Dino jump — same speed regardless of setting */
         if (jumping) {
             jumpFr++;
             uint8_t half=JUMP_FR/2;
@@ -339,12 +347,12 @@ int main(void) {
             else { dinoY=DINO_GY; jumping=0; jumpFr=0; }
         }
 
-        /* Cactus — speed setting only changes this */
         cactX -= cactSpeed;
         if (cactX<-CACT_W) {
             EraseCactFull(prevCactX);
             cactX=SW+10+(now%25);
             prevCactX=cactX;
+            cactType = (cactType + 1 + (now % 2)) % 3;
             score++;
         }
 
