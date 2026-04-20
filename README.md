@@ -35,79 +35,145 @@ Tái tạo trò chơi khủng long khi mất mạng của Google Chrome, chạy 
 ### Tổng quan hoạt động chương trình
 
 ```mermaid
+
 flowchart TD
-    A\[Khởi động hệ thống] --> B\[Cấu hình Clock 84MHz]
-    B --> C\[Khởi tạo ngoại vi: Timer, LED, Buzzer, Button, LCD]
-    C --> D\[Hiển thị Menu]
-    D --> E{Trạng thái?}
 
-    E -->|ST\_MENU| F{Nút được nhấn?}
-    F -->|B1| G\[Di chuyển con trỏ lên]
-    F -->|B5| H\[Di chuyển con trỏ xuống]
-    F -->|B3 + Start Game| I\[Bắt đầu game]
-    F -->|B3 + Speed| J\[Đổi tốc độ Chậm/Nhanh]
-    G --> E
-    H --> E
-    J --> E
+&#x20;   A\[Khởi động hệ thống] --> B\[Cấu hình Clock 84MHz]
 
-    I --> K\[Xóa màn hình, vẽ mặt đất và khủng long]
-    K --> L{Trạng thái ST\_PLAY}
+&#x20;   B --> C\[Khởi tạo ngoại vi: Timer, LED, Buzzer, Button, LCD]
 
-    E -->|ST\_PLAY| L
-    L --> M{B3 được nhấn?}
-    M -->|Có| N\[Khủng long nhảy + Buzzer kêu]
-    M -->|Không| O\[Chờ frame tiếp theo]
-    N --> O
+&#x20;   C --> D\[Hiển thị Menu]
 
-    O --> P\[Cập nhật vị trí khủng long]
-    P --> Q\[Cập nhật vị trí xương rồng]
-    Q --> R{Va chạm?}
+&#x20;   D --> E{Trạng thái?}
 
-    R -->|Không| S\[Vẽ khủng long và xương rồng]
-    S --> T\[Cập nhật điểm số]
-    T --> L
+&#x20;
 
-    R -->|Có| U\[GAME OVER]
-    U --> V\[Bật LED đỏ + Buzzer]
-    V --> W\[Hiển thị điểm và điểm cao nhất]
-    W --> X\[Chờ 2 giây]
+&#x20;   E -->|ST\_MENU| F{Nút được nhấn?}
 
-    E -->|ST\_OVER| X
-    X --> Y{Hết 2 giây?}
-    Y -->|Chưa| X
-    Y -->|Rồi| Z\[Tắt LED + Buzzer]
-    Z --> D
+&#x20;   F -->|B1| G\[Di chuyển con trỏ lên]
+
+&#x20;   F -->|B5| H\[Di chuyển con trỏ xuống]
+
+&#x20;   F -->|B3 + Start Game| I\[Bắt đầu game]
+
+&#x20;   F -->|B3 + Speed| J\[Đổi tốc độ Chậm/Nhanh]
+
+&#x20;   G --> E
+
+&#x20;   H --> E
+
+&#x20;   J --> E
+
+&#x20;
+
+&#x20;   I --> K\[Xóa màn hình, vẽ mặt đất và khủng long]
+
+&#x20;   K --> L{Trạng thái ST\_PLAY}
+
+&#x20;
+
+&#x20;   E -->|ST\_PLAY| L
+
+&#x20;   L --> M{B3 được nhấn?}
+
+&#x20;   M -->|Có| N\[Khủng long nhảy + Buzzer kêu]
+
+&#x20;   M -->|Không| O\[Chờ frame tiếp theo]
+
+&#x20;   N --> O
+
+&#x20;
+
+&#x20;   O --> P\[Cập nhật vị trí khủng long]
+
+&#x20;   P --> Q\[Cập nhật vị trí xương rồng]
+
+&#x20;   Q --> R{Va chạm?}
+
+&#x20;
+
+&#x20;   R -->|Không| S\[Vẽ khủng long và xương rồng]
+
+&#x20;   S --> T\[Cập nhật điểm số]
+
+&#x20;   T --> L
+
+&#x20;
+
+&#x20;   R -->|Có| U\[GAME OVER]
+
+&#x20;   U --> V\[Bật LED đỏ + Buzzer]
+
+&#x20;   V --> W\[Hiển thị điểm và điểm cao nhất]
+
+&#x20;   W --> X\[Chờ 2 giây]
+
+&#x20;
+
+&#x20;   E -->|ST\_OVER| X
+
+&#x20;   X --> Y{Hết 2 giây?}
+
+&#x20;   Y -->|Chưa| X
+
+&#x20;   Y -->|Rồi| Z\[Tắt LED + Buzzer]
+
+&#x20;   Z --> D
+
 ```
 
 ### Chi tiết xử lý nhảy
 
 ```mermaid
+
 flowchart TD
-    A\[B3 được nhấn + đang trên mặt đất] --> B\[jumping = 1, jumpFr = 0]
-    B --> C\[Bật Buzzer 80ms]
-    C --> D{jumpFr <= 7?}
-    D -->|Có| E\[Khủng long bay lên: dinoY giảm]
-    D -->|Không| F{jumpFr <= 14?}
-    F -->|Có| G\[Khủng long rơi xuống: dinoY tăng]
-    F -->|Không| H\[Hạ cánh: dinoY = mặt đất, jumping = 0]
-    E --> I\[jumpFr++]
-    G --> I
-    I --> D
+
+&#x20;   A\[B3 được nhấn + đang trên mặt đất] --> B\[jumping = 1, jumpFr = 0]
+
+&#x20;   B --> C\[Bật Buzzer 80ms]
+
+&#x20;   C --> D{jumpFr <= 7?}
+
+&#x20;   D -->|Có| E\[Khủng long bay lên: dinoY giảm]
+
+&#x20;   D -->|Không| F{jumpFr <= 14?}
+
+&#x20;   F -->|Có| G\[Khủng long rơi xuống: dinoY tăng]
+
+&#x20;   F -->|Không| H\[Hạ cánh: dinoY = mặt đất, jumping = 0]
+
+&#x20;   E --> I\[jumpFr++]
+
+&#x20;   G --> I
+
+&#x20;   I --> D
+
 ```
 
 ### Chi tiết phát hiện va chạm
 
 ```mermaid
+
 flowchart TD
-    A\[Kiểm tra va chạm AABB] --> B{DINO\_X < cactX + CACT\_W?}
-    B -->|Không| C\[Không va chạm]
-    B -->|Có| D{DINO\_X + DINO\_W > cactX?}
-    D -->|Không| C
-    D -->|Có| E{dinoY < CACT\_GY + CACT\_H?}
-    E -->|Không| C
-    E -->|Có| F{dinoY + DINO\_H > CACT\_GY?}
-    F -->|Không| C
-    F -->|Có| G\[VA CHẠM → Game Over]
+
+&#x20;   A\[Kiểm tra va chạm AABB] --> B{DINO\_X < cactX + CACT\_W?}
+
+&#x20;   B -->|Không| C\[Không va chạm]
+
+&#x20;   B -->|Có| D{DINO\_X + DINO\_W > cactX?}
+
+&#x20;   D -->|Không| C
+
+&#x20;   D -->|Có| E{dinoY < CACT\_GY + CACT\_H?}
+
+&#x20;   E -->|Không| C
+
+&#x20;   E -->|Có| F{dinoY + DINO\_H > CACT\_GY?}
+
+&#x20;   F -->|Không| C
+
+&#x20;   F -->|Có| G\[VA CHẠM → Game Over]
+
 ```
 
 ## Thư Viện Yêu Cầu
@@ -119,17 +185,17 @@ Dự án sử dụng thư viện LUMI SDK cho kit mở rộng NUCLEO-F401RE:
 Clone và đặt cùng thư mục với dự án:
 
 ```
-D:/STM32CubeIDE\_2.1.1/
-├── ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/   ← Thư viện SDK
-│   ├── lib\_stm/
+D:/STM32CubeIDE\\\_2.1.1/
+├── ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/   ← Thư viện SDK
+│   ├── lib\\\_stm/
 │   └── shared/
 └── DinoGame/                          ← Dự án này
     ├── Src/
     │   └── main.c
     ├── Inc/
     ├── Startup/
-    ├── STM32F401RETX\_FLASH.ld
-    └── STM32F401RETX\_RAM.ld
+    ├── STM32F401RETX\\\_FLASH.ld
+    └── STM32F401RETX\\\_RAM.ld
 ```
 
 ## Hướng Dẫn Build
@@ -144,7 +210,7 @@ D:/STM32CubeIDE\_2.1.1/
 1. **Clone repo và SDK:**
 
 ```bash
-   git clone https://github.com/HD-Nam/ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE.git
+   git clone https://github.com/HD-Nam/ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE.git
    git clone <đường-dẫn-repo-này>
    ```
 
@@ -152,23 +218,23 @@ D:/STM32CubeIDE\_2.1.1/
 3. **Cấu hình đường dẫn Include** trong **Project Properties > C/C++ Build > Settings > MCU GCC Compiler > Include paths**:
 
 ```
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Drivers/CMSIS/Include
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Drivers/STM32F401RE\_StdPeriph\_Driver/inc
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/button
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/buzzer
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/led
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/sensor
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/serial
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/ucglib
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/flash
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Middle/rtos
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Utilities
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Drivers/CMSIS/Include
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Drivers/STM32F401RE\\\_StdPeriph\\\_Driver/inc
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/button
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/buzzer
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/led
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/sensor
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/serial
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/ucglib
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/flash
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Middle/rtos
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/shared/Utilities
    ```
 
 4. **Cấu hình đường dẫn thư viện** trong **MCU GCC Linker > Library search paths**:
 
 ```
-   ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/lib\_stm
+   ThuVien\\\_SDK\\\_1.0.3\\\_NUCLEO-F401RE/lib\\\_stm
    ```
 
 5. **Build** bằng **Ctrl+B**
@@ -181,9 +247,9 @@ D:/STM32CubeIDE\_2.1.1/
 │   └── main.c                    ← Mã nguồn game
 ├── Inc/                          ← Header của dự án (nếu có)
 ├── Startup/
-│   └── startup\_stm32f401retx.s   ← File khởi động
-├── STM32F401RETX\_FLASH.ld        ← Linker script
-├── STM32F401RETX\_RAM.ld
+│   └── startup\\\_stm32f401retx.s   ← File khởi động
+├── STM32F401RETX\\\_FLASH.ld        ← Linker script
+├── STM32F401RETX\\\_RAM.ld
 ├── .gitignore
 └── README.md
 ```
@@ -206,7 +272,7 @@ Người chơi có thể chọn độ khó trên màn hình menu khi mở game. 
 
 ```
 ┌──────────┐    B3+Start    ┌──────────┐   Va chạm   ┌──────────┐
-│  ST\_MENU │ ──────────────>│ ST\_PLAY  │ ──────────> │ ST\_OVER  │
+│  ST\\\_MENU │ ──────────────>│ ST\\\_PLAY  │ ──────────> │ ST\\\_OVER  │
 │          │                │          │             │          │
 │ - Chọn   │                │ - Nhảy   │             │ - LED đỏ │
 │   tốc độ │                │ - Điểm   │             │ - Buzzer │
