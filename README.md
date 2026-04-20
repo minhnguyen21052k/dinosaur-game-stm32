@@ -1,47 +1,129 @@
-# Chrome Dino Game — STM32F401RE + LUMI Extension Kit
+# Game Khủng Long Chrome
 
-A recreation of Chrome's offline dinosaur game running on an STM32 NUCLEO-F401RE with the LUMI IoT Extension Board, displayed on a 128x128 ST7735 SPI LCD.
+Tái tạo trò chơi khủng long khi mất mạng của Google Chrome, chạy trên vi điều khiển STM32 NUCLEO-F401RE kết hợp với Kit mở rộng LUMI.
 
-## Features
+## Tính Năng
 
-* Menu screen with cursor navigation
-* Two speed levels (Slow / Fast) — affects cactus speed only
-* High score tracking across games
-* Buzzer beep on jump
-* Red LED flash on game over
-* 2-second game over screen with score display, then auto-return to menu
+* Màn hình menu với con trỏ điều hướng
+* Hai mức tốc độ (Chậm / Nhanh)
+* Theo dõi điểm cao nhất giữa các lượt chơi
+* Âm thanh buzzer khi nhảy
+* Đèn LED đỏ nhấp nháy khi thua
+* Màn hình thua hiển thị điểm trong 2 giây, sau đó tự động quay về menu
 
-## Hardware
+## Phần Cứng
 
-* **Board:** STM32 NUCLEO-F401RE
-* **Extension:** LUMI IoT STM Board Kit (LM-ISBK V1.0)
-* **Display:** ST7735 128x128 SPI LCD (onboard)
-* **Buzzer:** PC9 (transistor-driven)
-* **LED:** RGB LEDs (transistor-driven)
-* **Buttons:** SW1 (PB5), SW3 (PA4), SW5 (PB4)
+|Thành phần|Mô tả|
+|-|-|
+|**Vi điều khiển**|STM32 NUCLEO-F401RE|
+|**Kit mở rộng**|LUMI IoT STM Board Kit (LM-ISBK V1.0)|
+|**Màn hình**|ST7735 128x128 SPI LCD (tích hợp trên kit)|
+|**Buzzer**|PC9 (điều khiển qua transistor)|
+|**LED**|LED RGB (điều khiển qua transistor)|
+|**Nút bấm**|SW1 (PB5), SW3 (PA4), SW5 (PB4)|
 
-## Controls
+## Điều Khiển
 
-|Button|Menu|In Game|
+|Nút|Trong Menu|Trong Game|
 |-|-|-|
-|B1 (SW1, PB5)|Move cursor up|—|
-|B5 (SW5, PB4)|Move cursor down|—|
-|B3 (SW3, PA4)|Select / confirm|Jump|
+|B1 (SW1, PB5)|Di chuyển con trỏ lên|—|
+|B5 (SW5, PB4)|Di chuyển con trỏ xuống|—|
+|B3 (SW3, PA4)|Chọn / xác nhận|Nhảy|
 
-## Required Library
+## Lưu Đồ Thuật Toán
 
-This project uses the LUMI SDK for the NUCLEO-F401RE extension kit:
+### Tổng quan hoạt động chương trình
+
+```mermaid
+flowchart TD
+    A\[Khởi động hệ thống] --> B\[Cấu hình Clock 84MHz]
+    B --> C\[Khởi tạo ngoại vi: Timer, LED, Buzzer, Button, LCD]
+    C --> D\[Hiển thị Menu]
+    D --> E{Trạng thái?}
+
+    E -->|ST\_MENU| F{Nút được nhấn?}
+    F -->|B1| G\[Di chuyển con trỏ lên]
+    F -->|B5| H\[Di chuyển con trỏ xuống]
+    F -->|B3 + Start Game| I\[Bắt đầu game]
+    F -->|B3 + Speed| J\[Đổi tốc độ Chậm/Nhanh]
+    G --> E
+    H --> E
+    J --> E
+
+    I --> K\[Xóa màn hình, vẽ mặt đất và khủng long]
+    K --> L{Trạng thái ST\_PLAY}
+
+    E -->|ST\_PLAY| L
+    L --> M{B3 được nhấn?}
+    M -->|Có| N\[Khủng long nhảy + Buzzer kêu]
+    M -->|Không| O\[Chờ frame tiếp theo]
+    N --> O
+
+    O --> P\[Cập nhật vị trí khủng long]
+    P --> Q\[Cập nhật vị trí xương rồng]
+    Q --> R{Va chạm?}
+
+    R -->|Không| S\[Vẽ khủng long và xương rồng]
+    S --> T\[Cập nhật điểm số]
+    T --> L
+
+    R -->|Có| U\[GAME OVER]
+    U --> V\[Bật LED đỏ + Buzzer]
+    V --> W\[Hiển thị điểm và điểm cao nhất]
+    W --> X\[Chờ 2 giây]
+
+    E -->|ST\_OVER| X
+    X --> Y{Hết 2 giây?}
+    Y -->|Chưa| X
+    Y -->|Rồi| Z\[Tắt LED + Buzzer]
+    Z --> D
+```
+
+### Chi tiết xử lý nhảy
+
+```mermaid
+flowchart TD
+    A\[B3 được nhấn + đang trên mặt đất] --> B\[jumping = 1, jumpFr = 0]
+    B --> C\[Bật Buzzer 80ms]
+    C --> D{jumpFr <= 7?}
+    D -->|Có| E\[Khủng long bay lên: dinoY giảm]
+    D -->|Không| F{jumpFr <= 14?}
+    F -->|Có| G\[Khủng long rơi xuống: dinoY tăng]
+    F -->|Không| H\[Hạ cánh: dinoY = mặt đất, jumping = 0]
+    E --> I\[jumpFr++]
+    G --> I
+    I --> D
+```
+
+### Chi tiết phát hiện va chạm
+
+```mermaid
+flowchart TD
+    A\[Kiểm tra va chạm AABB] --> B{DINO\_X < cactX + CACT\_W?}
+    B -->|Không| C\[Không va chạm]
+    B -->|Có| D{DINO\_X + DINO\_W > cactX?}
+    D -->|Không| C
+    D -->|Có| E{dinoY < CACT\_GY + CACT\_H?}
+    E -->|Không| C
+    E -->|Có| F{dinoY + DINO\_H > CACT\_GY?}
+    F -->|Không| C
+    F -->|Có| G\[VA CHẠM → Game Over]
+```
+
+## Thư Viện Yêu Cầu
+
+Dự án sử dụng thư viện LUMI SDK cho kit mở rộng NUCLEO-F401RE:
 
 **https://github.com/HD-Nam/ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE**
 
-Clone it and place it alongside the project directory:
+Clone và đặt cùng thư mục với dự án:
 
 ```
 D:/STM32CubeIDE\_2.1.1/
-├── ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/   ← SDK library
+├── ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/   ← Thư viện SDK
 │   ├── lib\_stm/
 │   └── shared/
-└── DinoGame/                          ← this project
+└── DinoGame/                          ← Dự án này
     ├── Src/
     │   └── main.c
     ├── Inc/
@@ -50,24 +132,24 @@ D:/STM32CubeIDE\_2.1.1/
     └── STM32F401RETX\_RAM.ld
 ```
 
-## Building
+## Hướng Dẫn Build
 
-### Prerequisites
+### Yêu cầu
 
 * [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html)
-* [LUMI SDK](https://github.com/HD-Nam/ThuVien_SDK_1.0.3_NUCLEO-F401RE) cloned locally
+* [LUMI SDK](https://github.com/HD-Nam/ThuVien_SDK_1.0.3_NUCLEO-F401RE) đã clone về máy
 
-### Setup
+### Các bước thực hiện
 
-1. Clone this repo and the SDK:
+1. **Clone repo và SDK:**
 
-```
+```bash
    git clone https://github.com/HD-Nam/ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE.git
-   git clone <this-repo-url>
+   git clone <đường-dẫn-repo-này>
    ```
 
-2. Open STM32CubeIDE, import the project via **File > Import > Existing Projects into Workspace**
-3. Configure include paths in **Project Properties > C/C++ Build > Settings > MCU GCC Compiler > Include paths**:
+2. **Mở STM32CubeIDE**, import dự án qua **File > Import > Existing Projects into Workspace**
+3. **Cấu hình đường dẫn Include** trong **Project Properties > C/C++ Build > Settings > MCU GCC Compiler > Include paths**:
 
 ```
    ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Drivers/CMSIS/Include
@@ -83,34 +165,59 @@ D:/STM32CubeIDE\_2.1.1/
    ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/shared/Utilities
    ```
 
-4. Configure library path in **MCU GCC Linker > Library search paths**:
+4. **Cấu hình đường dẫn thư viện** trong **MCU GCC Linker > Library search paths**:
 
 ```
    ThuVien\_SDK\_1.0.3\_NUCLEO-F401RE/lib\_stm
    ```
 
-5. Build with **Ctrl+B**
-6. Flash to board via **Run > Debug** or the ST-LINK programmer
+5. **Build** bằng **Ctrl+B**
+6. **Nạp chương trình** qua **Run > Debug** hoặc sử dụng ST-LINK programmer
 
-## Project Structure
+## Cấu Trúc Dự Án
 
 ```
 ├── Src/
-│   └── main.c              ← game source code
-├── Inc/                     ← project headers (if any)
+│   └── main.c                    ← Mã nguồn game
+├── Inc/                          ← Header của dự án (nếu có)
 ├── Startup/
-│   └── startup\_stm32f401retx.s
-├── STM32F401RETX\_FLASH.ld   ← linker script
+│   └── startup\_stm32f401retx.s   ← File khởi động
+├── STM32F401RETX\_FLASH.ld        ← Linker script
 ├── STM32F401RETX\_RAM.ld
 ├── .gitignore
 └── README.md
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-The player can choose the difficulty on the menu screen upon opening the game. After starting the game, the player will control the dinosaur with the objective of jumping over as many cactus as possible. The game will keep track of your score and show it on the game menu. Upon losing, the player will be show their current and best score then will be sent back to the game menu.
+### Tổng quan
 
-## License
+Người chơi có thể chọn độ khó trên màn hình menu khi mở game. Sau khi bắt đầu, người chơi điều khiển khủng long với mục tiêu nhảy qua càng nhiều xương rồng càng tốt. Game sẽ theo dõi điểm số và hiển thị trên menu. Khi thua, người chơi sẽ được hiển thị điểm hiện tại và điểm cao nhất, sau đó quay về menu.
+
+### Chi tiết kỹ thuật
+
+* **Tốc độ khung hình:** Cố định 60ms/frame (khoảng 16 FPS) cho mọi mức tốc độ
+* **Tốc độ xương rồng:** Chậm = 6 pixel/frame, Nhanh = 9 pixel/frame
+* **Nhảy:** 14 frame (7 frame bay lên + 7 frame rơi xuống), độ cao 35 pixel
+* **Va chạm:** Sử dụng thuật toán AABB (Axis-Aligned Bounding Box)
+* **3 loại xương rồng:** Xoay vòng ngẫu nhiên mỗi lần xuất hiện lại
+
+### Sơ đồ trạng thái
+
+```
+┌──────────┐    B3+Start    ┌──────────┐   Va chạm   ┌──────────┐
+│  ST\_MENU │ ──────────────>│ ST\_PLAY  │ ──────────> │ ST\_OVER  │
+│          │                │          │             │          │
+│ - Chọn   │                │ - Nhảy   │             │ - LED đỏ │
+│   tốc độ │                │ - Điểm   │             │ - Buzzer │
+│ - Điểm   │                │ - Buzzer │             │ - 2 giây │
+│   cao    │                │          │             │          │
+└──────────┘ <──────────────└──────────┘             └──────────┘
+       ^                                                   │
+       └───────────────── Sau 2 giây ──────────────────────┘
+```
+
+## Giấy Phép
 
 MIT
 
