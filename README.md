@@ -79,7 +79,7 @@ flowchart TD
     Z --> D
 ```
 
-### Chi tiết xử lý nhảy
+### Thuật toán xử lý nhảy
 
 ```mermaid
 flowchart TD
@@ -95,7 +95,7 @@ flowchart TD
     I --> D
 ```
 
-### Chi tiết phát hiện va chạm
+### Thuật toán phát hiện va chạm
 
 ```mermaid
 flowchart TD
