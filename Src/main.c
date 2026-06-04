@@ -103,13 +103,21 @@ static void DrawLabel(int16_t x, int16_t y, const char *str) {
 }
 
 static void DrawPlayHud(void) {
-    ucg_SetColor(&ucg, 0, 0, 0, 0);
-    ucg_DrawBox(&ucg, 0, 0, SW, 18);
-
     PrepText();
 
     ucg_SetColor(&ucg, 0, 90, 90, 90);
     DrawLabel(2, 12, speedFast ? "FAST" : "SLOW");
+
+    ucg_SetColor(&ucg, 0, 255, 255, 255);
+    DrawNumber(100, 12, score);
+}
+static void UpdateScore(void) {
+    ucg_SetColor(&ucg, 0, 0, 0, 0);
+
+    // Clear only the score area
+    ucg_DrawBox(&ucg, 96, 0, 32, 18);
+
+    PrepText();
 
     ucg_SetColor(&ucg, 0, 255, 255, 255);
     DrawNumber(100, 12, score);
@@ -512,7 +520,7 @@ int main(void) {
 
         if (score != prevScore) {
             prevScore = score;
-            DrawPlayHud();
+            UpdateScore();
         }
     }
 }
